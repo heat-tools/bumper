@@ -5,6 +5,7 @@ import datetime
 import subprocess
 import logging
 import github
+import click
 
 
 from subprocess import CalledProcessError
@@ -117,7 +118,18 @@ class Bumper(object):
         return github_author
 
 
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+@click.group()
+def cli():
+    pass
+
+
+@cli.command('bump')
+@click.argument('orgname')
+@click.argument('repo')
+def bump(orgname, repo):
     bumper = Bumper()
-    bumper.bump(orgname="JasonBoyles", repo="minecraft")
+    bumper.bump(orgname=orgname, repo=repo)
+
+
+if __name__ == "__main__":
+    cli()
