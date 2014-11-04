@@ -96,25 +96,31 @@ class Bumper(object):
 
     def _get_author_info(self):
         git_config_info = {}
+        default_author = github.InputGitAuthor(
+            'bumper',
+            'jason.boyles@rackspace.com',
+            datetime.datetime.utcnow().strftime(
+                "%Y-%m-%dT%H:%M:%SZ"))
         try:
             git_output = subprocess.check_output("git config --list",
                                                  shell=True)
         except (OSError, CalledProcessError):
             # couldn't run git, so return canned author info
-            return github.InputGitAuthor(
-                'bumper',
-                'jason.boyles@rackspace.com',
-                datetime.datetime.utcnow().strftime(
-                    "%Y-%m-%dT%H:%M:%SZ"))
+            return default_author
 
         for line in git_output.splitlines():
             rlvalue = line.split("=")
             if len(rlvalue) == 2:
                 git_config_info[rlvalue[0]] = rlvalue[1]
-        github_author = github.InputGitAuthor(
-            git_config_info.get('user.name'),
-            git_config_info.get('user.email'),
-            datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"))
+
+        if not git_config_info.get('user.name'):
+            github_author = default_author
+        else:
+            github_author = github.InputGitAuthor(
+                git_config_info.get('user.name'),
+                git_config_info.get('user.email'),
+                datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"))
+
         return github_author
 
 
