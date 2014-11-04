@@ -43,25 +43,24 @@ class Bumper(object):
         try:
             current_tag_ref = git_repo.get_git_ref("tags/{}".format(
                 self.tag_basename))
-            # tag_object = repo.get_git_tag(current_tag_ref.object.sha)
         except github.GithubException:
             print "no git ref for {}".format(self.tag_basename)
             current_tag_ref = None
-            # tag_object = None
-        print "** ref for {} {} {}".format(self.tag_basename,
-                                           current_tag_ref.ref,
-                                           current_tag_ref.url)
+        # print "** ref for {} {} {}".format(self.tag_basename,
+        #                                   current_tag_ref.ref,
+        #                                   current_tag_ref.url)
         if current_tag_ref.ref:
-            print "deleting tag {}...".format(self.tag_basename)
+            current_tag = git_repo.get_git_tag(current_tag_ref.object.sha)
+            print "* current tag {} is at sha {}".format(self.tag_basename, current_tag.object.sha)
+            print "* deleting tag {}...".format(self.tag_basename)
             current_tag_ref.delete()
-        print "creating tag {}...".format(self.tag_basename)
+        print "* creating new tag {} at sha {}".format(self.tag_basename, target_branch_sha)
         tag_object = git_repo.create_git_tag(
             tag_name,
             tag_message,
             target_branch_sha,
             "commit",
             tagger=self._get_author_info())
-        print "*** tag object sha is {}".format(tag_object.sha)
         if tag_object:
             git_repo.create_git_ref("refs/tags/{}".format(tag_name),
                                     tag_object.sha)
@@ -70,8 +69,8 @@ class Bumper(object):
         gh = self.github
         git_repo = gh.get_repo("{}/{}".format(orgname, repo))
         tag_name = "{}-{}".format(self.tag_basename, self._get_now_string())
-        tag_message = "Historical tag for release at {}\n".format(
-            self._get_now_string())
+        tag_message = "Historical tag for release on {}\n".format(
+            datetime.datetime.utcnow().strftime("%A %B %d, %Y"))
         tag_object = git_repo.create_git_tag(
             tag_name,
             tag_message,
@@ -79,8 +78,8 @@ class Bumper(object):
             "commit",
             tagger=self._get_author_info())
         if tag_object:
-            print "*** tag is tags/{}, sha is {}".format(tag_name,
-                                                         tag_object.sha)
+            print "* creating historical tag {} at sha {}".format(tag_name,
+                                                         tag_object.object.sha)
             git_repo.create_git_ref("refs/tags/" + tag_name, tag_object.sha)
 
     def _get_now_string(self):
