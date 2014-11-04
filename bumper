@@ -1,0 +1,123 @@
+#!/usr/bin/env python
+
+import os
+import datetime
+import subprocess
+import logging
+import github
+
+
+from subprocess import CalledProcessError
+
+
+class Bumper(object):
+    def __init__(self, github_token=None, basename='stable'):
+        self.tag_basename = basename
+        if github_token:
+            self.github_token = github_token
+        elif os.environ.get('GITHUB_TOKEN'):
+            self.github_token = os.environ.get('GITHUB_TOKEN')
+
+        assert self.github_token, ('A github token is required, either supp'
+                                   'lied via the command line, or the'
+                                   'environment variable GITHUB_TOKEN.')
+
+        self.github = github.Github(self.github_token)
+        self.repo_cache = {}
+
+    def bump(self, orgname=None, repo=None, branch='master',
+             tag_basename='stable'):
+        assert orgname, 'bump requires an orgname.'
+        assert repo, 'bump requires a repo.'
+
+        target_branch_sha = self._get_branch_sha(orgname, repo, branch)
+        historical_tag = self._create_historical_tag(orgname, repo, branch)
+        updated_tag = self._update_tag(orgname, repo, target_branch_sha)
+
+    def _update_tag(self, orgname, repo, target_branch_sha):
+        gh = self.github
+        git_repo = gh.get_repo("{}/{}".format(orgname, repo))
+        tag_name = self.tag_basename
+        tag_message = "current release"
+        try:
+            current_tag_ref = git_repo.get_git_ref("tags/{}".format(
+                self.tag_basename))
+            # tag_object = repo.get_git_tag(current_tag_ref.object.sha)
+        except github.GithubException:
+            print "no git ref for {}".format(self.tag_basename)
+            current_tag_ref = None
+            # tag_object = None
+        print "** ref for {} {} {}".format(self.tag_basename,
+                                           current_tag_ref.ref,
+                                           current_tag_ref.url)
+        if current_tag_ref.ref:
+            print "deleting tag {}...".format(self.tag_basename)
+            current_tag_ref.delete()
+        print "creating tag {}...".format(self.tag_basename)
+        tag_object = git_repo.create_git_tag(
+            tag_name,
+            tag_message,
+            target_branch_sha,
+            "commit",
+            tagger=self._get_author_info())
+        print "*** tag object sha is {}".format(tag_object.sha)
+        if tag_object:
+            git_repo.create_git_ref("refs/tags/{}".format(tag_name),
+                                    tag_object.sha)
+
+    def _create_historical_tag(self, orgname, repo, branch):
+        gh = self.github
+        git_repo = gh.get_repo("{}/{}".format(orgname, repo))
+        tag_name = "{}-{}".format(self.tag_basename, self._get_now_string())
+        tag_message = "Historical tag for release at {}\n".format(
+            self._get_now_string())
+        tag_object = git_repo.create_git_tag(
+            tag_name,
+            tag_message,
+            self._get_branch_sha(orgname, repo, branch),
+            "commit",
+            tagger=self._get_author_info())
+        if tag_object:
+            print "*** tag is tags/{}, sha is {}".format(tag_name,
+                                                         tag_object.sha)
+            git_repo.create_git_ref("refs/tags/" + tag_name, tag_object.sha)
+
+    def _get_now_string(self):
+        return datetime.datetime.utcnow().strftime(
+            "%Y%m%d%H%M%S")
+
+    def _get_branch_sha(self, orgname, repo, branch):
+        gh = self.github
+        git_repo = gh.get_repo("{}/{}".format(orgname, repo))
+        branch_object = git_repo.get_branch(branch)
+        sha = branch_object.commit.sha
+        return sha
+
+    def _get_author_info(self):
+        git_config_info = {}
+        try:
+            git_output = subprocess.check_output("git config --list",
+                                                 shell=True)
+        except (OSError, CalledProcessError):
+            # couldn't run git, so return canned author info
+            return github.InputGitAuthor(
+                'bumper',
+                'jason.boyles@rackspace.com',
+                datetime.datetime.utcnow().strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"))
+
+        for line in git_output.splitlines():
+            rlvalue = line.split("=")
+            if len(rlvalue) == 2:
+                git_config_info[rlvalue[0]] = rlvalue[1]
+        github_author = github.InputGitAuthor(
+            git_config_info['user.name'],
+            git_config_info['user.email'],
+            datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"))
+        return github_author
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    bumper = Bumper()
+    bumper.bump(orgname="JasonBoyles", repo="minecraft")
