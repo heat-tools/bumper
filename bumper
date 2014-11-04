@@ -97,8 +97,8 @@ class Bumper(object):
     def _get_author_info(self):
         git_config_info = {}
         default_author = github.InputGitAuthor(
-            'Jason Boyles',
-            'jason.boyles@rackspace.com',
+            '',
+            '',
             datetime.datetime.utcnow().strftime(
                 "%Y-%m-%dT%H:%M:%SZ"))
         try:
