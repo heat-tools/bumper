@@ -32,8 +32,13 @@ class Bumper(object):
         assert repo, 'bump requires a repo.'
 
         target_branch_sha = self._get_branch_sha(orgname, repo, branch)
-        historical_tag = self._create_historical_tag(orgname, repo, branch)
-        updated_tag = self._update_tag(orgname, repo, target_branch_sha)
+        if target_branch_sha.startswith(
+                self._get_existing_sha(orgname, repo, self.tag_basename)):
+            print ("*** tag {} already exists and matches branch {}, "
+                   "so our work is done.").format(self.tag_basename, branch)
+        else:
+            historical_tag = self._create_historical_tag(orgname, repo, branch)
+            updated_tag = self._update_tag(orgname, repo, target_branch_sha)
 
     def _update_tag(self, orgname, repo, target_branch_sha):
         gh = self.github
@@ -92,6 +97,16 @@ class Bumper(object):
         branch_object = git_repo.get_branch(branch)
         sha = branch_object.commit.sha
         return sha
+
+    def _get_existing_sha(self, orgname, repo, refname):
+        gh = self.github
+        git_repo = gh.get_repo("{}/{}".format(orgname, repo))
+        ref = git_repo.get_git_ref("tags/" + refname)
+        if ref.object:
+            tag = git_repo.get_git_tag(ref.object.sha)
+            return tag.object.sha
+        else:
+            return "None"
 
     def _get_author_info(self):
         git_config_info = {}
