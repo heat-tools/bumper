@@ -101,7 +101,10 @@ class Bumper(object):
     def _get_existing_sha(self, orgname, repo, refname):
         gh = self.github
         git_repo = gh.get_repo("{}/{}".format(orgname, repo))
-        ref = git_repo.get_git_ref("tags/" + refname)
+        try:
+            ref = git_repo.get_git_ref("tags/" + refname)
+        except github.GithubException:
+            return "None"
         if ref.object:
             tag = git_repo.get_git_tag(ref.object.sha)
             return tag.object.sha
