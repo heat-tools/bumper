@@ -11,6 +11,14 @@ import click
 from subprocess import CalledProcessError
 
 
+class BumpUnnecessary(Warning):
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return repr(self.value)
+
+
 class Bumper(object):
     def __init__(self, github_token=None, basename='stable'):
         self.tag_basename = basename
@@ -36,6 +44,9 @@ class Bumper(object):
                 self._get_existing_sha(orgname, repo, self.tag_basename)):
             print ("*** tag {} already exists and matches branch {}, "
                    "so our work is done.").format(self.tag_basename, branch)
+            raise BumpUnnecessary(
+                    ("tag {} already exists and matches"
+                     "branch {}").format(self.tag_basename, branch))
         else:
             historical_tag = self._create_historical_tag(orgname, repo, branch)
             updated_tag = self._update_tag(orgname, repo, target_branch_sha)
@@ -150,8 +161,11 @@ def cli():
 @click.argument('orgname')
 @click.argument('repo')
 def bump(orgname, repo):
-    bumper = Bumper()
-    bumper.bump(orgname=orgname, repo=repo)
+    try:
+        bumper = Bumper()
+        bumper.bump(orgname=orgname, repo=repo)
+    except BumpUnnecessary:
+        pass
 
 
 if __name__ == "__main__":
