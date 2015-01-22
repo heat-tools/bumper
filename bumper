@@ -6,9 +6,11 @@ import subprocess
 import logging
 import github
 import click
+import requests
 
 
 from subprocess import CalledProcessError
+from hot.utils.auth import OSAuth
 
 
 class BumpUnnecessary(Warning):
@@ -152,6 +154,21 @@ class Bumper(object):
         return github_author
 
 
+def fusion_flush_cache(regions=None):
+    auth = OSAuth()
+    if not regions:
+        regions = ["DFW", "ORD", "IAD", "HKG", "SYD"]
+    for region in regions:
+        print "flushing cache for region {}...".format(region),
+        heat_url = auth.keystone_client.service_catalog.url_for(
+                        service_type='orchestration',
+                        endpoint_type='publicURL', region_name=region)
+        headers = { 'X-Auth-Token': auth.get_token(),
+                    'Accept': 'application/json' }
+        template_url = heat_url + '/templates'
+        r = requests.delete(template_url, headers=headers)
+        print "{} responded with {}".format(region, r.status_code)
+
 @click.group()
 def cli():
     pass
@@ -160,10 +177,13 @@ def cli():
 @cli.command('bump')
 @click.argument('orgname')
 @click.argument('repo')
-def bump(orgname, repo):
+@click.option('--flush-fusion-cache', is_flag=True)
+def bump(orgname, repo, flush_fusion_cache):
     try:
         bumper = Bumper()
         bumper.bump(orgname=orgname, repo=repo)
+        if flush_fusion_cache:
+            fusion_flush_cache()
     except BumpUnnecessary:
         pass
 
