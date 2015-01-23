@@ -69,10 +69,13 @@ class Bumper(object):
         #                                   current_tag_ref.url)
         if current_tag_ref.ref:
             current_tag = git_repo.get_git_tag(current_tag_ref.object.sha)
-            print "* current tag {} is at sha {}".format(self.tag_basename, current_tag.object.sha)
+            print "* current tag {} is at sha {}".format(
+                self.tag_basename,
+                current_tag.object.sha)
             print "* deleting tag {}...".format(self.tag_basename)
             current_tag_ref.delete()
-        print "* creating new tag {} at sha {}".format(self.tag_basename, target_branch_sha)
+        print "* creating new tag {} at sha {}".format(self.tag_basename,
+                                                       target_branch_sha)
         tag_object = git_repo.create_git_tag(
             tag_name,
             tag_message,
@@ -96,8 +99,9 @@ class Bumper(object):
             "commit",
             tagger=self._get_author_info())
         if tag_object:
-            print "* creating historical tag {} at sha {}".format(tag_name,
-                                                         tag_object.object.sha)
+            print "* creating historical tag {} at sha {}".format(
+                tag_name,
+                tag_object.object.sha)
             git_repo.create_git_ref("refs/tags/" + tag_name, tag_object.sha)
 
     def _get_now_string(self):
@@ -164,15 +168,17 @@ def fusion_flush_cache(regions=None):
         # LON endpoint doesn't appear in the US realm's service catalog
         if region.lower() == "lon":
             dfw_url = auth.keystone_client.service_catalog.url_for(
-                            service_type='orchestration',
-                            endpoint_type='publicURL', region_name="DFW")
+                service_type='orchestration',
+                endpoint_type='publicURL',
+                region_name="DFW")
             heat_url = re.sub("dfw", "lon", dfw_url)
         else:
             heat_url = auth.keystone_client.service_catalog.url_for(
-                            service_type='orchestration',
-                            endpoint_type='publicURL', region_name=region)
-        headers = { 'X-Auth-Token': auth.get_token(),
-                    'Accept': 'application/json' }
+                service_type='orchestration',
+                endpoint_type='publicURL',
+                region_name=region)
+        headers = {'X-Auth-Token': auth.get_token(),
+                   'Accept': 'application/json'}
         template_url = heat_url + '/templates'
         r = requests.delete(template_url, headers=headers)
         print "{} responded with {}".format(region, r.status_code)
