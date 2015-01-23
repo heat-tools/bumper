@@ -50,8 +50,8 @@ class Bumper(object):
                 ("tag {} already exists and matches"
                  "branch {}").format(self.tag_basename, branch))
         else:
-            historical_tag = self._create_historical_tag(orgname, repo, branch)
-            updated_tag = self._update_tag(orgname, repo, target_branch_sha)
+            self._create_historical_tag(orgname, repo, branch)
+            self._update_tag(orgname, repo, target_branch_sha)
 
     def _update_tag(self, orgname, repo, target_branch_sha):
         gh = self.github
