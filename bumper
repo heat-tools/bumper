@@ -3,7 +3,6 @@
 import os
 import datetime
 import subprocess
-import logging
 import github
 import click
 import requests
@@ -48,8 +47,8 @@ class Bumper(object):
             print ("*** tag {} already exists and matches branch {}, "
                    "so our work is done.").format(self.tag_basename, branch)
             raise BumpUnnecessary(
-                    ("tag {} already exists and matches"
-                     "branch {}").format(self.tag_basename, branch))
+                ("tag {} already exists and matches"
+                 "branch {}").format(self.tag_basename, branch))
         else:
             historical_tag = self._create_historical_tag(orgname, repo, branch)
             updated_tag = self._update_tag(orgname, repo, target_branch_sha)
@@ -177,6 +176,7 @@ def fusion_flush_cache(regions=None):
         template_url = heat_url + '/templates'
         r = requests.delete(template_url, headers=headers)
         print "{} responded with {}".format(region, r.status_code)
+
 
 @click.group()
 def cli():
