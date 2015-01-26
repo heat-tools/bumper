@@ -12,5 +12,5 @@ setup(name='bumper',
       install_requires=['click==3.3',
                         'PyGithub==1.25.2',
                         'hot>=0.5.0',
-                        'requests>=2.4.0']
+                        'requests==2.4.3']
       )
