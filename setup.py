@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(name='bumper',
       description='manipulate tags on Github hosted repos',
-      version='0.1.4',
+      version='0.1.5',
       author='Rackspace',
       author_email='jason@duncancreek.net',
       license='Apache License (2.0)',
