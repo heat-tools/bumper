@@ -203,5 +203,11 @@ def bump(orgname, repo, flush_fusion_cache):
         pass
 
 
+@cli.command('flush')
+@click.argument('regions', nargs=-1)
+def flush(regions):
+    fusion_flush_cache([r.upper() for r in regions])
+
+
 if __name__ == "__main__":
     cli()
