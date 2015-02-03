@@ -1,3 +1,5 @@
+[![Circle CI](https://circleci.com/gh/JasonBoyles/bumper.svg?style=svg)](https://circleci.com/gh/JasonBoyles/bumper)
+
 # bumper
 bumper updates tags for hot template releases
 
